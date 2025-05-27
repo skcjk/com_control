@@ -114,15 +114,15 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* definition and creation of sdCmdQueue */
-  osMessageQDef(sdCmdQueue, 1, uint16_t);
+  osMessageQDef(sdCmdQueue, 1, uint32_t);
   sdCmdQueueHandle = osMessageCreate(osMessageQ(sdCmdQueue), NULL);
 
   /* definition and creation of rx1Queue */
-  osMessageQDef(rx1Queue, 5, rxStruct);
+  osMessageQDef(rx1Queue, 5, uint32_t);
   rx1QueueHandle = osMessageCreate(osMessageQ(rx1Queue), NULL);
 
   /* definition and creation of rx2Queue */
-  osMessageQDef(rx2Queue, 5, rxStruct);
+  osMessageQDef(rx2Queue, 5, uint32_t);
   rx2QueueHandle = osMessageCreate(osMessageQ(rx2Queue), NULL);
 
   /* USER CODE BEGIN RTOS_QUEUES */
@@ -171,7 +171,7 @@ void StartDefaultTask(void const * argument)
   {
     osDelay(500);
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_2);
-    HAL_IWDG_Refresh(&hiwdg);
+    // HAL_IWDG_Refresh(&hiwdg);
   }
   /* USER CODE END StartDefaultTask */
 }

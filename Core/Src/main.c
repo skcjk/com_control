@@ -93,7 +93,6 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-	MX_IWDG_Init();
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_RTC_Init();
@@ -101,6 +100,7 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
   MX_FATFS_Init();
+  // MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
