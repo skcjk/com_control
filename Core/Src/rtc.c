@@ -125,10 +125,11 @@ void MX_RTC_Init(void)
   /* USER CODE BEGIN RTC_Init 2 */
   RTC_DateStruct = DateToUpdate;                              
   HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, 0x5051); 
-  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR2, (uint16_t)RTC_DateStruct.Year);
-  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR3, (uint16_t)RTC_DateStruct.Month);
-  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR4, (uint16_t)RTC_DateStruct.Date);
-  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR5, (uint16_t)RTC_DateStruct.WeekDay);
+  Date_write_BKP(&hrtc,&DateToUpdate);
+  }
+  else
+  {
+    Date_read_BKP(&hrtc);
   }
   /* USER CODE END RTC_Init 2 */
 
@@ -147,6 +148,10 @@ void HAL_RTC_MspInit(RTC_HandleTypeDef* rtcHandle)
     __HAL_RCC_BKP_CLK_ENABLE();
     /* RTC clock enable */
     __HAL_RCC_RTC_ENABLE();
+
+    /* RTC interrupt Init */
+    HAL_NVIC_SetPriority(RTC_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(RTC_IRQn);
   /* USER CODE BEGIN RTC_MspInit 1 */
 
   /* USER CODE END RTC_MspInit 1 */
@@ -163,6 +168,9 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
   /* USER CODE END RTC_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_RTC_DISABLE();
+
+    /* RTC interrupt Deinit */
+    HAL_NVIC_DisableIRQ(RTC_IRQn);
   /* USER CODE BEGIN RTC_MspDeInit 1 */
 
   /* USER CODE END RTC_MspDeInit 1 */
@@ -170,5 +178,21 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+void Date_write_BKP(RTC_HandleTypeDef *  hrtc,RTC_DateTypeDef * Date)
+{//将日期保存在备份域
+HAL_RTCEx_BKUPWrite(hrtc,RTC_BKP_DR5,Date->WeekDay);
+HAL_RTCEx_BKUPWrite(hrtc,RTC_BKP_DR2,Date->Year);
+HAL_RTCEx_BKUPWrite(hrtc,RTC_BKP_DR3,Date->Month);
+HAL_RTCEx_BKUPWrite(hrtc,RTC_BKP_DR4,Date->Date);
+}
+void Date_read_BKP(RTC_HandleTypeDef *  hrtc)
+{//将日期从备份域还原到hrtc->DateToUpdate用于HAL_RTC_GetDate更新日期
+RTC_DateStruct.WeekDay=HAL_RTCEx_BKUPRead(hrtc,RTC_BKP_DR5);
+RTC_DateStruct.Year=HAL_RTCEx_BKUPRead(hrtc,RTC_BKP_DR2);
+RTC_DateStruct.Month=HAL_RTCEx_BKUPRead(hrtc,RTC_BKP_DR3);
+RTC_DateStruct.Date=HAL_RTCEx_BKUPRead(hrtc,RTC_BKP_DR4);
+HAL_RTC_SetDate(hrtc, &RTC_DateStruct, RTC_FORMAT_BIN);
+}
 
 /* USER CODE END 1 */

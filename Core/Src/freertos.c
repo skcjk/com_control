@@ -28,6 +28,7 @@
 #include "iwdg.h"
 #include "SDTask.h"
 #include "usart.h"
+#include "rtc.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,6 +51,7 @@
 osPoolId  sdCmdQueuePoolHandle;
 osPoolId  rx1QueuePoolHandle;
 osPoolId  rx2QueuePoolHandle;
+extern RTC_DateTypeDef RTC_DateStruct; 
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
 osThreadId cmdTaskHandle;
@@ -170,6 +172,8 @@ void StartDefaultTask(void const * argument)
   for(;;)
   {
     osDelay(500);
+    HAL_RTC_GetDate(&hrtc,&RTC_DateStruct,RTC_FORMAT_BIN);
+	  Date_write_BKP(&hrtc,&RTC_DateStruct);
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_2);
     // HAL_IWDG_Refresh(&hiwdg);
   }

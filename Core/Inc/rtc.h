@@ -35,7 +35,8 @@ extern "C" {
 extern RTC_HandleTypeDef hrtc;
 
 /* USER CODE BEGIN Private defines */
-
+void Date_write_BKP(RTC_HandleTypeDef *  hrtc,RTC_DateTypeDef * Date);
+void Date_read_BKP(RTC_HandleTypeDef *  hrtc);
 /* USER CODE END Private defines */
 
 void MX_RTC_Init(void);
