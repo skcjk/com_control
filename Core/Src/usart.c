@@ -21,7 +21,26 @@
 #include "usart.h"
 
 /* USER CODE BEGIN 0 */
+#include <string.h>
+#include "stdio.h"
+#include "cmsis_os.h"
 
+extern osMessageQId rx1QueueHandle;
+extern osMessageQId rx2QueueHandle;
+extern osPoolId rx1QueuePoolHandle;
+extern osPoolId rx2QueuePoolHandle;
+uint8_t aRx1Buffer;		
+uint8_t aRx2Buffer;		
+rxStruct rx1S = {
+        .rx_buf = {0}, 
+        .data_length = 0 
+    };
+rxStruct rx2S = {
+        .rx_buf = {0}, 
+        .data_length = 0 
+    };
+rxStruct *rx1SForQueue;
+rxStruct *rx2SForQueue;
 /* USER CODE END 0 */
 
 UART_HandleTypeDef huart1;
@@ -198,5 +217,69 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
+int fputc(int ch, FILE *f)
+ 
+{
+ 
+  HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xffff);
+ 
+  return ch;
+ 
+}
 
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(huart);
+  /* NOTE: This function Should not be modified, when the callback is needed,
+           the HAL_UART_TxCpltCallback could be implemented in the user file
+   */
+  if (huart->Instance == USART1) 
+  {
+    if (rx1S.data_length >= RX_BUF_LEN) //
+    {
+      memset(rx1S.rx_buf, 0x00, RX_BUF_LEN);
+      rx1S.data_length = 0;
+    }
+    else
+    {
+      rx1S.rx_buf[rx1S.data_length++] = aRx1Buffer; //
+
+      if (((rx1S.rx_buf[rx1S.data_length - 1] == 0x0A) && (rx1S.rx_buf[rx1S.data_length - 2] == 0x0D)) || rx1S.data_length == RX_BUF_LEN) //
+      {
+        rx1SForQueue = osPoolAlloc(rx1QueuePoolHandle); // 从池中分配内存
+        memcpy(rx1SForQueue->rx_buf, rx1S.rx_buf, RX_BUF_LEN); // 将数据复制到分配的内存中
+        rx1SForQueue->data_length = rx1S.data_length; // 设置数据长度
+        if (osOK != osMessagePut(rx1QueueHandle, (uint32_t)rx1SForQueue, 0)) osPoolFree(rx1QueuePoolHandle, rx1SForQueue);
+        memset(rx1S.rx_buf, 0x00, rx1S.data_length);
+        rx1S.data_length = 0;
+      }
+    }
+    HAL_UART_Receive_IT(&huart1, (uint8_t *)&aRx1Buffer, 1); //
+  }
+  if (huart->Instance == USART2) 
+  {
+    if (rx2S.data_length >= RX_BUF_LEN) //
+    {
+      memset(rx2S.rx_buf, 0x00, RX_BUF_LEN);
+      rx2S.data_length = 0;
+    }
+    else
+    {
+      rx2S.rx_buf[rx2S.data_length++] = aRx2Buffer; //
+      HAL_UART_Transmit(&huart1, (uint8_t *)&aRx2Buffer, 1, 0x00);
+
+      if (((rx2S.rx_buf[rx2S.data_length - 1] == 0x0A) && (rx2S.rx_buf[rx2S.data_length - 2] == 0x0D)) || rx2S.data_length == RX_BUF_LEN) //
+      {
+        rx2SForQueue = osPoolAlloc(rx2QueuePoolHandle); // 从池中分配内存
+        memcpy(rx2SForQueue->rx_buf, rx2S.rx_buf, RX_BUF_LEN); // 将数据复制到分配的内存中
+        rx2SForQueue->data_length = rx2S.data_length; // 设置数据长度
+        if (osOK != osMessagePut(rx2QueueHandle, (uint32_t)rx2SForQueue, 0)) osPoolFree(rx2QueuePoolHandle, rx2SForQueue);
+        memset(rx2S.rx_buf, 0x00, rx2S.data_length);
+        rx2S.data_length = 0;
+      }
+    }
+    HAL_UART_Receive_IT(&huart2, (uint8_t *)&aRx2Buffer, 1); //
+  }
+}
 /* USER CODE END 1 */

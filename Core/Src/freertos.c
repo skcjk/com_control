@@ -26,6 +26,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "iwdg.h"
+#include "SDTask.h"
+#include "usart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -45,9 +47,17 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-
+osPoolId  sdCmdQueuePoolHandle;
+osPoolId  rx1QueuePoolHandle;
+osPoolId  rx2QueuePoolHandle;
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
+osThreadId cmdTaskHandle;
+osThreadId sdTaskHandle;
+osMessageQId sdCmdQueueHandle;
+osMessageQId rx1QueueHandle;
+osMessageQId rx2QueueHandle;
+osMutexId printMutexHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -55,6 +65,8 @@ osThreadId defaultTaskHandle;
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void const * argument);
+extern void CMDTask(void const * argument);
+extern void SDTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -83,6 +95,10 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
+  /* Create the mutex(es) */
+  /* definition and creation of printMutex */
+  osMutexDef(printMutex);
+  printMutexHandle = osMutexCreate(osMutex(printMutex));
 
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
@@ -96,14 +112,43 @@ void MX_FREERTOS_Init(void) {
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
+  /* Create the queue(s) */
+  /* definition and creation of sdCmdQueue */
+  osMessageQDef(sdCmdQueue, 1, uint16_t);
+  sdCmdQueueHandle = osMessageCreate(osMessageQ(sdCmdQueue), NULL);
+
+  /* definition and creation of rx1Queue */
+  osMessageQDef(rx1Queue, 5, rxStruct);
+  rx1QueueHandle = osMessageCreate(osMessageQ(rx1Queue), NULL);
+
+  /* definition and creation of rx2Queue */
+  osMessageQDef(rx2Queue, 5, rxStruct);
+  rx2QueueHandle = osMessageCreate(osMessageQ(rx2Queue), NULL);
+
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
+  osPoolDef(sdCmdQueuePool, 1, uint16_t); 
+  sdCmdQueuePoolHandle = osPoolCreate(osPool(sdCmdQueuePool));
+
+  osPoolDef(rx1QueuePool, 5, rxStruct); 
+  rx1QueuePoolHandle = osPoolCreate(osPool(rx1QueuePool));
+
+  osPoolDef(rx2QueuePool, 5, rxStruct); 
+  rx2QueuePoolHandle = osPoolCreate(osPool(rx2QueuePool));
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
   osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+
+  /* definition and creation of cmdTask */
+  osThreadDef(cmdTask, CMDTask, osPriorityHigh, 0, 256);
+  cmdTaskHandle = osThreadCreate(osThread(cmdTask), NULL);
+
+  /* definition and creation of sdTask */
+  osThreadDef(sdTask, SDTask, osPriorityNormal, 0, 512);
+  sdTaskHandle = osThreadCreate(osThread(sdTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */

@@ -41,7 +41,20 @@ extern RTC_HandleTypeDef hrtc;
 void MX_RTC_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+typedef struct 
+{
+	uint8_t  Seconds;
+	uint8_t  Minutes;
+	uint8_t  Hours;
+	uint8_t  Date;
+	uint8_t  WeekDay;
+	uint8_t  Month;
+	uint16_t Year;
+}BKTime;
 
+HAL_StatusTypeDef UISet_Time(uint8_t hour,uint8_t min,uint8_t sec);
+HAL_StatusTypeDef UISet_Date(uint8_t year,uint8_t month,uint8_t date,uint8_t week);
+int16_t CharToDec(char *str, uint8_t cnt);
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

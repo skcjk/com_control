@@ -56,6 +56,7 @@ void USART1_IRQHandler(void);
 void USART2_IRQHandler(void);
 void SDIO_IRQHandler(void);
 void TIM7_IRQHandler(void);
+void DMA2_Channel4_5_IRQHandler(void);
 /* USER CODE BEGIN EFP */
 
 /* USER CODE END EFP */

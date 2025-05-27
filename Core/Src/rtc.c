@@ -21,7 +21,54 @@
 #include "rtc.h"
 
 /* USER CODE BEGIN 0 */
+RTC_TimeTypeDef RTC_TimeStruct;  
+RTC_DateTypeDef RTC_DateStruct; 
 
+HAL_StatusTypeDef UISet_Time(uint8_t hour,uint8_t min,uint8_t sec)
+{
+	RTC_TimeStruct.Hours=hour;
+	RTC_TimeStruct.Minutes=min;
+	RTC_TimeStruct.Seconds=sec;
+	return HAL_RTC_SetTime(&hrtc,&RTC_TimeStruct,RTC_FORMAT_BIN);	
+}
+
+HAL_StatusTypeDef UISet_Date(uint8_t year,uint8_t month,uint8_t date,uint8_t week)
+{
+	RTC_DateStruct.Date=date;
+	RTC_DateStruct.Month=month;
+	RTC_DateStruct.WeekDay=week;
+	RTC_DateStruct.Year=year;
+	return HAL_RTC_SetDate(&hrtc,&RTC_DateStruct,RTC_FORMAT_BIN);
+}
+
+int16_t CharToDec(char *str, uint8_t cnt)
+{
+  int16_t data = 0;
+  uint8_t i;
+
+  if (str[0] == '-')
+  {
+    for (i = 1; i < cnt; i++)
+    {
+      data *= 10;
+      if (str[i] < '0' || str[i] > '9')
+        return 0;
+      data += str[i] - '0';
+    }
+    data = -data;
+  }
+  else
+  {
+    for (i = 0; i < cnt; i++)
+    {
+      data *= 10;
+      if (str[i] < '0' || str[i] > '9')
+        return 0;
+      data += str[i] - '0';
+    }
+  }
+  return data;
+}
 /* USER CODE END 0 */
 
 RTC_HandleTypeDef hrtc;
@@ -34,6 +81,9 @@ void MX_RTC_Init(void)
 
   /* USER CODE END RTC_Init 0 */
 
+  RTC_TimeTypeDef sTime = {0};
+  RTC_DateTypeDef DateToUpdate = {0};
+
   /* USER CODE BEGIN RTC_Init 1 */
 
   /* USER CODE END RTC_Init 1 */
@@ -42,13 +92,44 @@ void MX_RTC_Init(void)
   */
   hrtc.Instance = RTC;
   hrtc.Init.AsynchPrediv = RTC_AUTO_1_SECOND;
-  hrtc.Init.OutPut = RTC_OUTPUTSOURCE_ALARM;
+  hrtc.Init.OutPut = RTC_OUTPUTSOURCE_NONE;
   if (HAL_RTC_Init(&hrtc) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN RTC_Init 2 */
 
+  /* USER CODE BEGIN Check_RTC_BKUP */
+  if(HAL_RTCEx_BKUPRead(&hrtc,RTC_BKP_DR1)!= 0x5051)
+	  {
+  /* USER CODE END Check_RTC_BKUP */
+
+  /** Initialize RTC and set the Time and Date
+  */
+  sTime.Hours = 0x0;
+  sTime.Minutes = 0x0;
+  sTime.Seconds = 0x0;
+
+  if (HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  DateToUpdate.WeekDay = RTC_WEEKDAY_MONDAY;
+  DateToUpdate.Month = RTC_MONTH_JANUARY;
+  DateToUpdate.Date = 0x1;
+  DateToUpdate.Year = 0x0;
+
+  if (HAL_RTC_SetDate(&hrtc, &DateToUpdate, RTC_FORMAT_BCD) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN RTC_Init 2 */
+  RTC_DateStruct = DateToUpdate;                              
+  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR1, 0x5051); 
+  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR2, (uint16_t)RTC_DateStruct.Year);
+  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR3, (uint16_t)RTC_DateStruct.Month);
+  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR4, (uint16_t)RTC_DateStruct.Date);
+  HAL_RTCEx_BKUPWrite(&hrtc, RTC_BKP_DR5, (uint16_t)RTC_DateStruct.WeekDay);
+  }
   /* USER CODE END RTC_Init 2 */
 
 }
