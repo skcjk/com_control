@@ -56,10 +56,12 @@ extern RTC_DateTypeDef RTC_DateStruct;
 osThreadId defaultTaskHandle;
 osThreadId cmdTaskHandle;
 osThreadId sdTaskHandle;
+osThreadId saveTaskHandle;
 osMessageQId sdCmdQueueHandle;
 osMessageQId rx1QueueHandle;
 osMessageQId rx2QueueHandle;
 osMutexId printMutexHandle;
+osMutexId rtcMutexHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -69,6 +71,7 @@ osMutexId printMutexHandle;
 void StartDefaultTask(void const * argument);
 extern void CMDTask(void const * argument);
 extern void SDTask(void const * argument);
+extern void SaveTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -102,6 +105,10 @@ void MX_FREERTOS_Init(void) {
   osMutexDef(printMutex);
   printMutexHandle = osMutexCreate(osMutex(printMutex));
 
+  /* definition and creation of rtcMutex */
+  osMutexDef(rtcMutex);
+  rtcMutexHandle = osMutexCreate(osMutex(rtcMutex));
+
   /* USER CODE BEGIN RTOS_MUTEX */
   /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
@@ -116,7 +123,7 @@ void MX_FREERTOS_Init(void) {
 
   /* Create the queue(s) */
   /* definition and creation of sdCmdQueue */
-  osMessageQDef(sdCmdQueue, 1, uint32_t);
+  osMessageQDef(sdCmdQueue, 5, uint32_t);
   sdCmdQueueHandle = osMessageCreate(osMessageQ(sdCmdQueue), NULL);
 
   /* definition and creation of rx1Queue */
@@ -129,7 +136,7 @@ void MX_FREERTOS_Init(void) {
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
-  osPoolDef(sdCmdQueuePool, 1, uint16_t); 
+  osPoolDef(sdCmdQueuePool, 5, sdStruct); 
   sdCmdQueuePoolHandle = osPoolCreate(osPool(sdCmdQueuePool));
 
   osPoolDef(rx1QueuePool, 5, rxStruct); 
@@ -151,6 +158,10 @@ void MX_FREERTOS_Init(void) {
   /* definition and creation of sdTask */
   osThreadDef(sdTask, SDTask, osPriorityNormal, 0, 512);
   sdTaskHandle = osThreadCreate(osThread(sdTask), NULL);
+
+  /* definition and creation of saveTask */
+  osThreadDef(saveTask, SaveTask, osPriorityHigh, 0, 256);
+  saveTaskHandle = osThreadCreate(osThread(saveTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */

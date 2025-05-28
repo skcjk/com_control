@@ -414,6 +414,11 @@
               <FilePath>..\Core\Src\cmd.c</FilePath>
             </File>
             <File>
+              <FileName>saveTask.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\saveTask.c</FilePath>
+            </File>
+            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/main.c</FilePath>

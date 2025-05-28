@@ -8,16 +8,20 @@
 #define SD_DELETE_ALL 3
 #define SD_DELETE 4
 
-#define SD_BUF_LEN  256 
+#define SD_BUF_LEN  512
+#define READ_PATH_LEN 64
+#define DELETE_PATH_LEN 64
 
 typedef struct
 {
-    unsigned char rx_buf[SD_BUF_LEN];
-    uint16_t data_length;
+    char rx_buf[SD_BUF_LEN];
+    char read_path[READ_PATH_LEN];
+    char delete_path[DELETE_PATH_LEN];
+    uint16_t sd_cmd;
 } sdStruct;
 
 void SDTask(void const * argument);
 FRESULT list_dir (const char *path);
-FRESULT save_data(void);
-FRESULT read_data(void);
+FRESULT save_data(sdStruct *sdS);
+FRESULT read_data(sdStruct *sdS);
 FRESULT delete_all_files(const char *path);

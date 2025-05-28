@@ -8,9 +8,6 @@ FATFS fs;                         /* FatFs文件系统对象 */                 
 // UINT fnum;                        /* 文件成功读写数量 */
 // BYTE ReadBuffer[1024]= {0};       /* 读缓冲区 */
 // BYTE bpData[512] =  {0};   
-char WriteBuffer[100]= {0};
-char read_path[64] = {0};
-char delete_path[64] = {0};
 
 extern osMessageQId sdCmdQueueHandle;
 extern osPoolId  sdCmdQueuePoolHandle;
@@ -22,33 +19,33 @@ void SDTask(void const * argument)
 {
     osEvent evt;
     FRESULT sd_res;
-    uint16_t *sd_cmd;
+    sdStruct *sdS;
     sd_res = f_mount(&fs, "0:", 1);
     while(1)
     {
         evt = osMessageGet(sdCmdQueueHandle, osWaitForever);
         if (evt.status == osEventMessage)
         {
-            sd_cmd = evt.value.p;
-            switch (*sd_cmd)
+            sdS = evt.value.p;
+            switch (sdS->sd_cmd)
             {
             case SD_LS:
                 sd_res = list_dir("0:");
                 break;
             case SD_WRITE:
-                sd_res = save_data();
+                sd_res = save_data(sdS);
                 break;
             case SD_READ:
-                sd_res = read_data();
+                sd_res = read_data(sdS);
                 break;
             case SD_DELETE_ALL:
                 sd_res = delete_all_files("0:");
                 break;
             case SD_DELETE:
-                sd_res = f_unlink(delete_path);
+                sd_res = f_unlink(sdS->delete_path);
                 break;
             }
-            osPoolFree(sdCmdQueuePoolHandle, sd_cmd);
+            osPoolFree(sdCmdQueuePoolHandle, sdS);
             osMutexWait(printMutexHandle, osWaitForever);
             if (sd_res != FR_OK) printf("fatfs error: %d\r\n", sd_res);
             osMutexRelease(printMutexHandle);
@@ -97,7 +94,7 @@ FRESULT list_dir(const char *path)
     return res;
 }
 
-FRESULT save_data(void)
+FRESULT save_data(sdStruct *sdS)
 {
     FIL fp;
     char path[16];
@@ -117,20 +114,20 @@ FRESULT save_data(void)
         return res;
     }
 
-    res = f_write(&fp, WriteBuffer, strlen(WriteBuffer), &fnum);
+    res = f_write(&fp, sdS->rx_buf, strlen(sdS->rx_buf), &fnum);
     f_close(&fp);
 
     return res;
 }
 
-FRESULT read_data(void)
+FRESULT read_data(sdStruct *sdS)
 {
     FIL fp;
     FRESULT res;
     char line[100]={0}; /* Line buffer */
 
     /* Open a text file */
-    res = f_open(&fp, read_path, FA_READ);
+    res = f_open(&fp, sdS->read_path, FA_READ);
     if (res) return res;
 
     /* Read every line and display it */

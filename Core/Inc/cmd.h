@@ -28,3 +28,4 @@ uint8_t sum(cJSON *root);
 uint8_t reboot(cJSON *root);
 uint8_t timeRTC(cJSON *root);
 uint8_t sdCMD(cJSON *root);
+uint8_t trans(cJSON *root);

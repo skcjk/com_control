@@ -8,15 +8,20 @@ extern osMessageQId sdCmdQueueHandle;
 extern osPoolId  sdCmdQueuePoolHandle;
 extern osPoolId rx1QueuePoolHandle;
 extern osMutexId printMutexHandle;
+extern osMutexId rtcMutexHandle;
 extern RTC_TimeTypeDef RTC_TimeStruct;  
 extern RTC_DateTypeDef RTC_DateStruct; 
-extern char read_path[16];
-extern char delete_path[16];
-extern char WriteBuffer[100];
-extern uint8_t aRx1Buffer;	
-extern uint8_t aRx2Buffer;	
+extern uint8_t aRx1Buffer;		
 
-rxStruct *receiveRxFromQueneForCmd;
+static sdStruct sdS = {
+    .rx_buf = {0}, 
+    .read_path = {0},
+    .delete_path = {0},
+    .sd_cmd = 0
+};
+static sdStruct *sdSForQueue;
+
+rxStruct *receiveRx1FromQueneForCmd;
 
 void CMDTask(void *argument)
 {
@@ -26,11 +31,11 @@ void CMDTask(void *argument)
         {"reboot", reboot},
         {"time", timeRTC},
         {"sd", sdCMD},
+        {"trans", trans},
     };
     uint8_t res = NO_SUCH_CMD;
 
     HAL_UART_Receive_IT(&huart1, (uint8_t *)&aRx1Buffer, 1);
-    HAL_UART_Receive_IT(&huart2, (uint8_t *)&aRx2Buffer, 1);
     osEvent evt;
 
     while (1)
@@ -38,9 +43,9 @@ void CMDTask(void *argument)
         evt = osMessageGet(rx1QueueHandle, osWaitForever);
         if (evt.status == osEventMessage)
         { // 从串口接收缓冲区接收数据
-            receiveRxFromQueneForCmd = evt.value.p;
-            cJSON *root = cJSON_ParseWithLength((char *)receiveRxFromQueneForCmd->rx_buf, (size_t)receiveRxFromQueneForCmd->data_length); // 解析接收信息
-            osPoolFree(rx1QueuePoolHandle, receiveRxFromQueneForCmd);
+            receiveRx1FromQueneForCmd = evt.value.p;
+            cJSON *root = cJSON_ParseWithLength((char *)receiveRx1FromQueneForCmd->rx_buf, (size_t)receiveRx1FromQueneForCmd->data_length); // 解析接收信息
+            osPoolFree(rx1QueuePoolHandle, receiveRx1FromQueneForCmd);
 
             if (root == NULL)
             { // 解析失败
@@ -133,8 +138,10 @@ uint8_t timeRTC(cJSON *root){
         UISet_Time(temptimept.Hours, temptimept.Minutes, temptimept.Seconds);
         UISet_Date(temptimept.Year, temptimept.Month, temptimept.Date, temptimept.WeekDay);
     }
+    osMutexWait(rtcMutexHandle, osWaitForever);
     HAL_RTC_GetTime(&hrtc, &RTC_TimeStruct, RTC_FORMAT_BIN);
     HAL_RTC_GetDate(&hrtc, &RTC_DateStruct, RTC_FORMAT_BIN);
+    osMutexRelease(rtcMutexHandle);
     osMutexWait(printMutexHandle, osWaitForever);
     printf("%02d/%02d/%02d\r\n",2000 + RTC_DateStruct.Year, RTC_DateStruct.Month, RTC_DateStruct.Date);
     printf("%02d:%02d:%02d\r\n",RTC_TimeStruct.Hours, RTC_TimeStruct.Minutes, RTC_TimeStruct.Seconds);
@@ -146,28 +153,26 @@ uint8_t timeRTC(cJSON *root){
 uint8_t sdCMD(cJSON *root){
     cJSON *optItem = cJSON_GetObjectItem(root, "opt");
     uint8_t res = ARGV_ERROR;
-    uint16_t *sd_cmd;
-    sd_cmd = osPoolAlloc(sdCmdQueuePoolHandle);
     if (optItem != NULL && cJSON_IsString(optItem)){
         char *opt_str = cJSON_GetStringValue(optItem);
         if (!strcmp(opt_str, "ls")){
-            *sd_cmd = SD_LS;
+            sdS.sd_cmd = SD_LS;
             res = JSON_CMD_OK;
         }
         if (!strcmp(opt_str, "saveTest")){
-            strcpy(WriteBuffer, "test\r\n");
-            *sd_cmd = SD_WRITE;
+            strcpy(sdS.rx_buf, "test\r\n");
+            sdS.sd_cmd = SD_WRITE;
             res = JSON_CMD_OK;
         }
         if (!strcmp(opt_str, "delete_all")){
-            *sd_cmd = SD_DELETE_ALL;
+            sdS.sd_cmd = SD_DELETE_ALL;
             res = JSON_CMD_OK;
         }
         if (!strcmp(opt_str, "read")){
             cJSON *pathItem = cJSON_GetObjectItem(root, "path");
             if (pathItem != NULL && cJSON_IsString(pathItem)){
-                *sd_cmd = SD_READ;
-                strcpy(read_path, cJSON_GetStringValue(pathItem));
+                sdS.sd_cmd = SD_READ;
+                strcpy(sdS.read_path, cJSON_GetStringValue(pathItem));
                 res = JSON_CMD_OK;
             }
             else res = ARGV_ERROR;
@@ -175,8 +180,8 @@ uint8_t sdCMD(cJSON *root){
         if (!strcmp(opt_str, "delete")){
             cJSON *pathItem = cJSON_GetObjectItem(root, "path");
             if (pathItem != NULL && cJSON_IsString(pathItem)){
-                *sd_cmd = SD_DELETE;
-                strcpy(delete_path, cJSON_GetStringValue(pathItem));
+                sdS.sd_cmd = SD_DELETE;
+                strcpy(sdS.delete_path, cJSON_GetStringValue(pathItem));
                 res = JSON_CMD_OK;
             }
             else res = ARGV_ERROR;
@@ -184,13 +189,35 @@ uint8_t sdCMD(cJSON *root){
         
         free(opt_str);
         if (res == JSON_CMD_OK){
-            if (osOK != osMessagePut(sdCmdQueueHandle, (uint32_t)sd_cmd, 0)) {
-                osPoolFree(sdCmdQueuePoolHandle, sd_cmd); // 如果消息队列满了，释放内存
+            sdSForQueue = osPoolAlloc(sdCmdQueuePoolHandle);
+            sdSForQueue->sd_cmd = sdS.sd_cmd;
+            memcpy(sdSForQueue->rx_buf, sdS.rx_buf, SD_BUF_LEN);
+            memcpy(sdSForQueue->read_path, sdS.read_path, READ_PATH_LEN);
+            memcpy(sdSForQueue->delete_path, sdS.delete_path, DELETE_PATH_LEN);
+            if (osOK != osMessagePut(sdCmdQueueHandle, (uint32_t)sdSForQueue, 0)) {
+                osPoolFree(sdCmdQueuePoolHandle, sdSForQueue); // 如果消息队列满了，释放内存
                 return OS_ERROR;
             }
             return JSON_CMD_OK;
         } 
     }
     else res = ARGV_ERROR;
+    return res;
+}
+
+uint8_t trans(cJSON *root){
+    uint8_t res = ARGV_ERROR;
+    cJSON *dataItem = cJSON_GetObjectItem(root, "data");
+    if (dataItem != NULL && cJSON_IsString(dataItem)){
+        char *data_str = cJSON_GetStringValue(dataItem);
+        HAL_UART_Transmit(&huart2, (uint8_t *)data_str, strlen(data_str), 0xFF);
+        HAL_UART_Transmit(&huart2, (uint8_t *)"\r\n", 2, 0xFF);
+        //等待发送完成
+        while (huart2.gState != HAL_UART_STATE_READY) {
+            osDelay(1); // 等待UART状态变为READY
+        }
+        free(data_str); // 释放内存
+        res = JSON_CMD_OK;
+    }
     return res;
 }
