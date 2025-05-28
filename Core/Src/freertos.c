@@ -172,10 +172,8 @@ void StartDefaultTask(void const * argument)
   for(;;)
   {
     osDelay(500);
-    HAL_RTC_GetDate(&hrtc,&RTC_DateStruct,RTC_FORMAT_BIN);
-	  Date_write_BKP(&hrtc,&RTC_DateStruct);
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_2);
-    // HAL_IWDG_Refresh(&hiwdg);
+    HAL_IWDG_Refresh(&hiwdg);
   }
   /* USER CODE END StartDefaultTask */
 }

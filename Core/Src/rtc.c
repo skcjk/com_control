@@ -38,6 +38,7 @@ HAL_StatusTypeDef UISet_Date(uint8_t year,uint8_t month,uint8_t date,uint8_t wee
 	RTC_DateStruct.Month=month;
 	RTC_DateStruct.WeekDay=week;
 	RTC_DateStruct.Year=year;
+	Date_write_BKP(&hrtc,&RTC_DateStruct);
 	return HAL_RTC_SetDate(&hrtc,&RTC_DateStruct,RTC_FORMAT_BIN);
 }
 
@@ -131,6 +132,10 @@ void MX_RTC_Init(void)
   {
     Date_read_BKP(&hrtc);
   }
+  HAL_RTCEx_BKUPWrite(&hrtc,RTC_BKP_DR5,RTC_DateStruct.WeekDay);
+  HAL_RTCEx_BKUPWrite(&hrtc,RTC_BKP_DR2,RTC_DateStruct.Year);
+  HAL_RTCEx_BKUPWrite(&hrtc,RTC_BKP_DR3,RTC_DateStruct.Month);
+  HAL_RTCEx_BKUPWrite(&hrtc,RTC_BKP_DR4,RTC_DateStruct.Date);
   /* USER CODE END RTC_Init 2 */
 
 }
