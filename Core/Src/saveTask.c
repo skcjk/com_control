@@ -35,7 +35,7 @@ void SaveTask(void const * argument){
             HAL_RTC_GetDate(&hrtc, &RTC_DateStruct, RTC_FORMAT_BIN);
             osMutexRelease(rtcMutexHandle);
             // 去除接收到的数据末尾的\r\n
-            char *rx_buf = receiveRx2FromQueneForCmd->rx_buf;
+            unsigned char *rx_buf = receiveRx2FromQueneForCmd->rx_buf;
             size_t len = receiveRx2FromQueneForCmd->data_length;
             if (len >= 2 && rx_buf[len - 2] == '\r' && rx_buf[len - 1] == '\n') {
                 rx_buf[len - 2] = '\0';
@@ -43,7 +43,7 @@ void SaveTask(void const * argument){
                 receiveRx2FromQueneForCmd->data_length -= 2;
             }
             snprintf(sdS.rx_buf, SD_BUF_LEN,
-                "{\"data\":\"%s\",\"year\":%02d,\"month\":%02d,\"day\":%02d,\"hour\":%02d,\"minute\":%02d,\"second\":%02d}\r\n\r\n",
+                "{\"data\":\"%s\",\"year\":%02d,\"month\":%02d,\"day\":%02d,\"hour\":%02d,\"minute\":%02d,\"second\":%02d}\r\n",
                 rx_buf,
                 2000 + RTC_DateStruct.Year, RTC_DateStruct.Month, RTC_DateStruct.Date,
                 RTC_TimeStruct.Hours, RTC_TimeStruct.Minutes, RTC_TimeStruct.Seconds);

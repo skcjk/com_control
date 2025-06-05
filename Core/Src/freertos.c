@@ -156,7 +156,7 @@ void MX_FREERTOS_Init(void) {
   cmdTaskHandle = osThreadCreate(osThread(cmdTask), NULL);
 
   /* definition and creation of sdTask */
-  osThreadDef(sdTask, SDTask, osPriorityNormal, 0, 512);
+  osThreadDef(sdTask, SDTask, osPriorityNormal, 0, 1024);
   sdTaskHandle = osThreadCreate(osThread(sdTask), NULL);
 
   /* definition and creation of saveTask */

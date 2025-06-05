@@ -124,7 +124,7 @@ FRESULT read_data(sdStruct *sdS)
 {
     FIL fp;
     FRESULT res;
-    char line[100]={0}; /* Line buffer */
+    char line[512]={0}; /* Line buffer */
 
     /* Open a text file */
     res = f_open(&fp, sdS->read_path, FA_READ);
@@ -133,7 +133,7 @@ FRESULT read_data(sdStruct *sdS)
     /* Read every line and display it */
     osMutexWait(printMutexHandle, osWaitForever);
     while (f_gets(line, sizeof(line), &fp) != NULL){
-        printf(line);
+        printf("%s", line);
     }
     osMutexRelease(printMutexHandle);
 

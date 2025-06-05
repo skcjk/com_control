@@ -141,6 +141,7 @@ uint8_t timeRTC(cJSON *root){
     osMutexWait(rtcMutexHandle, osWaitForever);
     HAL_RTC_GetTime(&hrtc, &RTC_TimeStruct, RTC_FORMAT_BIN);
     HAL_RTC_GetDate(&hrtc, &RTC_DateStruct, RTC_FORMAT_BIN);
+    Date_write_BKP(&hrtc,&RTC_DateStruct);  // 更新备份寄存器中的日期信息,调用HAL_RTC_GetTime后会清空天数计数器，所以必须将日期保存至备份区
     osMutexRelease(rtcMutexHandle);
     osMutexWait(printMutexHandle, osWaitForever);
     printf("%02d/%02d/%02d\r\n",2000 + RTC_DateStruct.Year, RTC_DateStruct.Month, RTC_DateStruct.Date);
