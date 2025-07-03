@@ -18,18 +18,19 @@
   */
 /* USER CODE END Header */
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32F1_SD_H
-#define __STM32F1_SD_H
+#ifndef __STM32L4_SD_H
+#define __STM32L4_SD_H
 
 #ifdef __cplusplus
  extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32f1xx_hal.h"
+#include "stm32l4xx_hal.h"
 #include "fatfs_platform.h"
 
-/* Exported types --------------------------------------------------------*/
+/* Exported types ------------------------------------------------------------*/
+
 /**
   * @brief SD Card information structure
   */
@@ -41,16 +42,19 @@
   */
 #define   MSD_OK                        ((uint8_t)0x00)
 #define   MSD_ERROR                     ((uint8_t)0x01)
+#define   MSD_ERROR_SD_NOT_PRESENT      ((uint8_t)0x02)
 
 /**
   * @brief  SD transfer state definition
   */
 #define   SD_TRANSFER_OK                ((uint8_t)0x00)
 #define   SD_TRANSFER_BUSY              ((uint8_t)0x01)
+#define   SD_TRANSFER_ERROR             ((uint8_t)0x02)
+
+#define SD_DATATIMEOUT           ((uint32_t)100000000)
 
 #define SD_PRESENT               ((uint8_t)0x01)
 #define SD_NOT_PRESENT           ((uint8_t)0x00)
-#define SD_DATATIMEOUT           ((uint32_t)100000000)
 
 #ifdef OLD_API
 /* kept to avoid issue when migrating old projects. */
@@ -83,9 +87,15 @@ void    BSP_SD_WriteCpltCallback(void);
 void    BSP_SD_ReadCpltCallback(void);
 /* USER CODE END BSP_H_CODE */
 #endif
-
+/* USER CODE BEGIN CallBacksSection_H */
+/* These __weak functions can be surcharged by application code in case the current settings
+   (eg. interrupt priority, callbacks implementation) need to be changed for specific application needs */
+void    BSP_SD_AbortCallback(void);
+void    BSP_SD_WriteCpltCallback(void);
+void    BSP_SD_ReadCpltCallback(void);
+/* USER CODE END CallBacksSection_H */
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __STM32F1_SD_H */
+#endif /* __STM32L4_SD_H */

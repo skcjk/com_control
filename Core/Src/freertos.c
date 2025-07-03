@@ -25,7 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "iwdg.h"
+//#include "iwdg.h"
 #include "SDTask.h"
 #include "usart.h"
 #include "rtc.h"
@@ -77,6 +77,15 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
 void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
+
+/* USER CODE BEGIN VPORT_SUPPORT_TICKS_AND_SLEEP */
+__weak void vPortSuppressTicksAndSleep( TickType_t xExpectedIdleTime )
+{
+  // Generated when configUSE_TICKLESS_IDLE == 2.
+  // Function called in tasks.c (in portTASK_FUNCTION).
+  // TO BE COMPLETED or TO BE REPLACED by a user one, overriding that weak one.
+}
+/* USER CODE END VPORT_SUPPORT_TICKS_AND_SLEEP */
 
 /* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
 static StaticTask_t xIdleTaskTCBBuffer;
@@ -160,7 +169,7 @@ void MX_FREERTOS_Init(void) {
   sdTaskHandle = osThreadCreate(osThread(sdTask), NULL);
 
   /* definition and creation of saveTask */
-  osThreadDef(saveTask, SaveTask, osPriorityHigh, 0, 256);
+  osThreadDef(saveTask, SaveTask, osPriorityIdle, 0, 256);
   saveTaskHandle = osThreadCreate(osThread(saveTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
@@ -184,7 +193,7 @@ void StartDefaultTask(void const * argument)
   {
     osDelay(500);
     HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_2);
-    HAL_IWDG_Refresh(&hiwdg);
+//    HAL_IWDG_Refresh(&hiwdg);
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -193,4 +202,3 @@ void StartDefaultTask(void const * argument)
 /* USER CODE BEGIN Application */
 
 /* USER CODE END Application */
-
