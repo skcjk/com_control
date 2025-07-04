@@ -179,12 +179,12 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void const * argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
+  HAL_GPIO_WritePin(OUT_CTR_GPIO_Port, OUT_CTR_Pin, GPIO_PIN_SET); 
   /* Infinite loop */
   for(;;)
   {
     osDelay(500);
-    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
-//    HAL_IWDG_Refresh(&hiwdg);
+    // HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
   }
   /* USER CODE END StartDefaultTask */
 }

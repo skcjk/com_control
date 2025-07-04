@@ -475,11 +475,6 @@
               <FileType>1</FileType>
               <FilePath>../FATFS/Target/sd_diskio.c</FilePath>
             </File>
-            <File>
-              <FileName>fatfs_platform.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../FATFS/Target/fatfs_platform.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>

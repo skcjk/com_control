@@ -21,9 +21,16 @@ void SDTask(void const * argument)
     FRESULT sd_res;
     sdStruct *sdS;
     sd_res = f_mount(&fs, "0:", 1);
+    if (sd_res != FR_OK){ 
+        osMutexWait(printMutexHandle, osWaitForever);
+        printf("fatfs mount error: %d\r\n", sd_res);
+        osMutexRelease(printMutexHandle);
+    }
     while(1)
     {
+        HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET); 
         evt = osMessageGet(sdCmdQueueHandle, osWaitForever);
+        HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET); 
         if (evt.status == osEventMessage)
         {
             sdS = evt.value.p;
