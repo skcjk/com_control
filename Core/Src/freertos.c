@@ -57,6 +57,7 @@ osThreadId defaultTaskHandle;
 osThreadId cmdTaskHandle;
 osThreadId sdTaskHandle;
 osThreadId saveTaskHandle;
+osThreadId delayTaskHandle;
 osMessageQId sdCmdQueueHandle;
 osMessageQId rx1QueueHandle;
 osMessageQId rx2QueueHandle;
@@ -72,6 +73,7 @@ void StartDefaultTask(void const * argument);
 extern void CMDTask(void const * argument);
 extern void SDTask(void const * argument);
 extern void SaveTask(void const * argument);
+extern void DelayTask(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -163,6 +165,10 @@ void MX_FREERTOS_Init(void) {
   osThreadDef(saveTask, SaveTask, osPriorityIdle, 0, 256);
   saveTaskHandle = osThreadCreate(osThread(saveTask), NULL);
 
+  /* definition and creation of delayTask */
+  // osThreadDef(delayTask, DelayTask, osPriorityLow, 0, 128);
+  // delayTaskHandle = osThreadCreate(osThread(delayTask), NULL);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -180,6 +186,7 @@ void StartDefaultTask(void const * argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   HAL_GPIO_WritePin(OUT_CTR_GPIO_Port, OUT_CTR_Pin, GPIO_PIN_SET); 
+  HAL_GPIO_WritePin(EN232_GPIO_Port, EN232_Pin, GPIO_PIN_SET);
   /* Infinite loop */
   for(;;)
   {

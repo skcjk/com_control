@@ -29,3 +29,4 @@ uint8_t reboot(cJSON *root);
 uint8_t timeRTC(cJSON *root);
 uint8_t sdCMD(cJSON *root);
 uint8_t trans(cJSON *root);
+uint8_t delayCTR(cJSON *root);

@@ -2,6 +2,8 @@
 #include "rtc.h"
 #include "SDTask.h"
 #include <math.h>
+#include "cmsis_os.h"
+#include "delayTask.h"
 
 extern osMessageQId rx2QueueHandle;
 extern osMessageQId sdCmdQueueHandle;
@@ -11,7 +13,11 @@ extern osMutexId printMutexHandle;
 extern osMutexId rtcMutexHandle;
 extern RTC_TimeTypeDef RTC_TimeStruct;  
 extern RTC_DateTypeDef RTC_DateStruct; 
-extern uint8_t aRx2Buffer;		
+extern uint8_t aRx2Buffer;	
+uint32_t delayMin;
+extern osThreadId delayTaskHandle;	
+
+osThreadDef(delayTask, DelayTask, osPriorityIdle, 0, 128);
 
 static sdStruct sdS = {
     .rx_buf = {0}, 
@@ -32,6 +38,7 @@ void CMDTask(void *argument)
         {"time", timeRTC},
         {"sd", sdCMD},
         {"trans", trans},
+        {"delay", delayCTR},
     };
     uint8_t res = NO_SUCH_CMD;
 
@@ -211,14 +218,34 @@ uint8_t trans(cJSON *root){
     cJSON *dataItem = cJSON_GetObjectItem(root, "data");
     if (dataItem != NULL && cJSON_IsString(dataItem)){
         char *data_str = cJSON_GetStringValue(dataItem);
-        HAL_UART_Transmit(&huart2, (uint8_t *)data_str, strlen(data_str), 0xFF);
-        HAL_UART_Transmit(&huart2, (uint8_t *)"\r\n", 2, 0xFF);
+        HAL_UART_Transmit(&hlpuart1, (uint8_t *)data_str, strlen(data_str), 0xFF);
+        HAL_UART_Transmit(&hlpuart1, (uint8_t *)"\r\n", 2, 0xFF);
         //等待发送完成
         while (huart2.gState != HAL_UART_STATE_READY) {
             osDelay(1); // 等待UART状态变为READY
         }
         free(data_str); // 释放内存
         res = JSON_CMD_OK;
+    }
+    return res;
+}
+
+uint8_t delayCTR(cJSON *root){
+    uint8_t res = ARGV_ERROR;
+    cJSON *timeItem = cJSON_GetObjectItem(root, "time");
+    if (timeItem != NULL && cJSON_IsNumber(timeItem)){
+        delayMin = cJSON_GetNumberValue(timeItem);
+        osMutexWait(printMutexHandle, osWaitForever);
+        printf("delay and loop task: %d min\r\n", delayMin);
+        osMutexRelease(printMutexHandle);
+        
+        if (delayTaskHandle != NULL) {
+            osThreadTerminate(delayTaskHandle); // 终止延时任务
+        }
+        
+        delayTaskHandle = osThreadCreate(osThread(delayTask), NULL);
+
+        return JSON_CMD_OK;
     }
     return res;
 }

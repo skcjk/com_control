@@ -416,6 +416,11 @@
               <FilePath>..\Core\Src\SDTask.c</FilePath>
             </File>
             <File>
+              <FileName>delayTask.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\delayTask.c</FilePath>
+            </File>
+            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/main.c</FilePath>
