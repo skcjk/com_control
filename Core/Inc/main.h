@@ -61,8 +61,6 @@ void Error_Handler(void);
 #define LED_GPIO_Port GPIOA
 #define EN232_Pin GPIO_PIN_5
 #define EN232_GPIO_Port GPIOA
-#define INVALID_Pin GPIO_PIN_6
-#define INVALID_GPIO_Port GPIOA
 #define DET_Pin GPIO_PIN_13
 #define DET_GPIO_Port GPIOB
 #define OUT_CTR_Pin GPIO_PIN_10

@@ -78,15 +78,6 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
 void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
 
-/* USER CODE BEGIN VPORT_SUPPORT_TICKS_AND_SLEEP */
-__weak void vPortSuppressTicksAndSleep( TickType_t xExpectedIdleTime )
-{
-  // Generated when configUSE_TICKLESS_IDLE == 2.
-  // Function called in tasks.c (in portTASK_FUNCTION).
-  // TO BE COMPLETED or TO BE REPLACED by a user one, overriding that weak one.
-}
-/* USER CODE END VPORT_SUPPORT_TICKS_AND_SLEEP */
-
 /* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
 static StaticTask_t xIdleTaskTCBBuffer;
 static StackType_t xIdleStack[configMINIMAL_STACK_SIZE];
@@ -192,7 +183,7 @@ void StartDefaultTask(void const * argument)
   for(;;)
   {
     osDelay(500);
-    HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_2);
+    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_0);
 //    HAL_IWDG_Refresh(&hiwdg);
   }
   /* USER CODE END StartDefaultTask */

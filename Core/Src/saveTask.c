@@ -2,11 +2,11 @@
 #include "rtc.h"
 #include "SDTask.h"
 
-extern osMessageQId rx2QueueHandle;
+extern osMessageQId rx1QueueHandle;
 extern osMessageQId sdCmdQueueHandle;
-extern osPoolId rx2QueuePoolHandle;
+extern osPoolId rx1QueuePoolHandle;
 extern osPoolId  sdCmdQueuePoolHandle;
-extern uint8_t aRx2Buffer;
+extern uint8_t aRx1Buffer;
 extern RTC_TimeTypeDef RTC_TimeStruct;  
 extern RTC_DateTypeDef RTC_DateStruct; 
 extern osMutexId rtcMutexHandle;
@@ -19,36 +19,36 @@ static sdStruct sdS = {
 };
 static sdStruct *sdSForQueue;
 
-rxStruct *receiveRx2FromQueneForCmd;
+rxStruct *receiveRx1FromQueneForSD;
 
 void SaveTask(void const * argument){
     osEvent evt;
 
-    HAL_UART_Receive_IT(&huart2, (uint8_t *)&aRx2Buffer, 1);
+    HAL_UART_Receive_IT(&hlpuart1, (uint8_t *)&aRx1Buffer, 1);
     while (1)
     {
-        evt = osMessageGet(rx2QueueHandle, osWaitForever);
+        evt = osMessageGet(rx1QueueHandle, osWaitForever);
         if (evt.status == osEventMessage){
-            receiveRx2FromQueneForCmd = evt.value.p;
+            receiveRx1FromQueneForSD = evt.value.p;
             osMutexWait(rtcMutexHandle, osWaitForever);
             HAL_RTC_GetTime(&hrtc, &RTC_TimeStruct, RTC_FORMAT_BIN);
             HAL_RTC_GetDate(&hrtc, &RTC_DateStruct, RTC_FORMAT_BIN);
             Date_write_BKP(&hrtc,&RTC_DateStruct);  // 更新备份寄存器中的日期信息,调用HAL_RTC_GetTime后会清空天数计数器，所以必须将日期保存至备份区
             osMutexRelease(rtcMutexHandle);
             // 去除接收到的数据末尾的\r\n
-            unsigned char *rx_buf = receiveRx2FromQueneForCmd->rx_buf;
-            size_t len = receiveRx2FromQueneForCmd->data_length;
+            unsigned char *rx_buf = receiveRx1FromQueneForSD->rx_buf;
+            size_t len = receiveRx1FromQueneForSD->data_length;
             if (len >= 2 && rx_buf[len - 2] == '\r' && rx_buf[len - 1] == '\n') {
                 rx_buf[len - 2] = '\0';
                 rx_buf[len - 1] = '\0';
-                receiveRx2FromQueneForCmd->data_length -= 2;
+                receiveRx1FromQueneForSD->data_length -= 2;
             }
             snprintf(sdS.rx_buf, SD_BUF_LEN,
                 "{\"data\":\"%s\",\"year\":%02d,\"month\":%02d,\"day\":%02d,\"hour\":%02d,\"minute\":%02d,\"second\":%02d}\r\n",
                 rx_buf,
                 2000 + RTC_DateStruct.Year, RTC_DateStruct.Month, RTC_DateStruct.Date,
                 RTC_TimeStruct.Hours, RTC_TimeStruct.Minutes, RTC_TimeStruct.Seconds);
-            osPoolFree(rx2QueuePoolHandle, receiveRx2FromQueneForCmd);
+            osPoolFree(rx1QueuePoolHandle, receiveRx1FromQueneForSD);
 
             sdSForQueue = osPoolAlloc(sdCmdQueuePoolHandle);
             sdSForQueue->sd_cmd = sdS.sd_cmd;

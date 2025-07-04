@@ -3,15 +3,15 @@
 #include "SDTask.h"
 #include <math.h>
 
-extern osMessageQId rx1QueueHandle;
+extern osMessageQId rx2QueueHandle;
 extern osMessageQId sdCmdQueueHandle;
 extern osPoolId  sdCmdQueuePoolHandle;
-extern osPoolId rx1QueuePoolHandle;
+extern osPoolId rx2QueuePoolHandle;
 extern osMutexId printMutexHandle;
 extern osMutexId rtcMutexHandle;
 extern RTC_TimeTypeDef RTC_TimeStruct;  
 extern RTC_DateTypeDef RTC_DateStruct; 
-extern uint8_t aRx1Buffer;		
+extern uint8_t aRx2Buffer;		
 
 static sdStruct sdS = {
     .rx_buf = {0}, 
@@ -21,7 +21,7 @@ static sdStruct sdS = {
 };
 static sdStruct *sdSForQueue;
 
-rxStruct *receiveRx1FromQueneForCmd;
+rxStruct *receiveRx2FromQueneForCmd;
 
 void CMDTask(void *argument)
 {
@@ -35,17 +35,17 @@ void CMDTask(void *argument)
     };
     uint8_t res = NO_SUCH_CMD;
 
-    HAL_UART_Receive_IT(&hlpuart1, (uint8_t *)&aRx1Buffer, 1);
+    HAL_UART_Receive_IT(&huart2, (uint8_t *)&aRx2Buffer, 1);
     osEvent evt;
 
     while (1)
     {
-        evt = osMessageGet(rx1QueueHandle, osWaitForever);
+        evt = osMessageGet(rx2QueueHandle, osWaitForever);
         if (evt.status == osEventMessage)
         { // 从串口接收缓冲区接收数据
-            receiveRx1FromQueneForCmd = evt.value.p;
-            cJSON *root = cJSON_ParseWithLength((char *)receiveRx1FromQueneForCmd->rx_buf, (size_t)receiveRx1FromQueneForCmd->data_length); // 解析接收信息
-            osPoolFree(rx1QueuePoolHandle, receiveRx1FromQueneForCmd);
+            receiveRx2FromQueneForCmd = evt.value.p;
+            cJSON *root = cJSON_ParseWithLength((char *)receiveRx2FromQueneForCmd->rx_buf, (size_t)receiveRx2FromQueneForCmd->data_length); // 解析接收信息
+            osPoolFree(rx2QueuePoolHandle, receiveRx2FromQueneForCmd);
 
             if (root == NULL)
             { // 解析失败

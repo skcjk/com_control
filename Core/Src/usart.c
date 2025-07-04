@@ -266,7 +266,7 @@ int fputc(int ch, FILE *f)
  
 {
  
-  HAL_UART_Transmit(&hlpuart1, (uint8_t *)&ch, 1, 0xffff);
+  HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, 0xffff);
  
   return ch;
  
@@ -279,7 +279,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   /* NOTE: This function Should not be modified, when the callback is needed,
            the HAL_UART_TxCpltCallback could be implemented in the user file
    */
-  if (huart->Instance == USART1) 
+  if (huart->Instance == LPUART1) 
   {
     if (rx1S.data_length >= RX_BUF_LEN) //
     {
@@ -289,6 +289,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     else
     {
       rx1S.rx_buf[rx1S.data_length++] = aRx1Buffer; //
+      HAL_UART_Transmit(&huart2, (uint8_t *)&aRx1Buffer, 1, 0x00);
 
       if (((rx1S.rx_buf[rx1S.data_length - 1] == 0x0A) && (rx1S.rx_buf[rx1S.data_length - 2] == 0x0D)) || rx1S.data_length == RX_BUF_LEN) //
       {
@@ -312,7 +313,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     else
     {
       rx2S.rx_buf[rx2S.data_length++] = aRx2Buffer; //
-      HAL_UART_Transmit(&hlpuart1, (uint8_t *)&aRx2Buffer, 1, 0x00);
 
       if (((rx2S.rx_buf[rx2S.data_length - 1] == 0x0A) && (rx2S.rx_buf[rx2S.data_length - 2] == 0x0D)) || rx2S.data_length == RX_BUF_LEN) //
       {

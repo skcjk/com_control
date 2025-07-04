@@ -104,15 +104,8 @@ FRESULT save_data(sdStruct *sdS)
     HAL_RTC_GetDate(&hrtc, &RTC_DateStruct, RTC_FORMAT_BIN);
     sprintf(path, "%02d_%02d_%02d.txt\r\n", RTC_DateStruct.Year, RTC_DateStruct.Month, RTC_DateStruct.Date);
 
-    res = f_open(&fp, path, FA_WRITE | FA_OPEN_ALWAYS);
+    res = f_open(&fp, path, FA_WRITE | FA_OPEN_APPEND);
     if (res) return res;
-
-    // Move to end of file for append
-    res = f_lseek(&fp, f_size(&fp));
-    if (res) {
-        f_close(&fp);
-        return res;
-    }
 
     res = f_write(&fp, sdS->rx_buf, strlen(sdS->rx_buf), &fnum);
     f_close(&fp);
