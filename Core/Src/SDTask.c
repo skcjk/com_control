@@ -54,7 +54,11 @@ void SDTask(void const * argument)
             }
             osPoolFree(sdCmdQueuePoolHandle, sdS);
             osMutexWait(printMutexHandle, osWaitForever);
-            if (sd_res != FR_OK) printf("fatfs error: %d\r\n", sd_res);
+            if (sd_res != FR_OK) {
+                printf("fatfs error: %d\r\n", sd_res);
+                __set_FAULTMASK(1);
+                HAL_NVIC_SystemReset();
+            }
             osMutexRelease(printMutexHandle);
         }
     }
